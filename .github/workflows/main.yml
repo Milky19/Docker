@@ -64,7 +64,6 @@ jobs:
       - name: Remove Old Docker Image
         run: |
           docker image prune -f
-
       # 11. Run New Container
       - name: Run Docker Container
         run: |

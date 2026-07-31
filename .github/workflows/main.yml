@@ -1,31 +1,114 @@
-name: Docker Deploy
+name: Docker CI/CD Pipeline
 
 on:
   push:
     branches:
       - main
+
 jobs:
   deploy:
+    name: Docker Deployment
     runs-on: self-hosted
+
     steps:
+
+      # 1. Checkout Source
       - name: Checkout Source
         uses: actions/checkout@v4
 
+      # 2. Validate Repository
+      - name: Validate Repository
+        run: |
+          echo "Repository Validation"
+          pwd
+          ls -la
+
+      # 3. Lint Dockerfile
+      - name: Lint Dockerfile
+        run: |
+          if [ -f Dockerfile ]; then
+            echo "Dockerfile Found"
+          else
+            echo "Dockerfile Missing"
+            exit 1
+          fi
+
+      # 4. Display Docker Version
+      - name: Display Docker Version
+        run: |
+          docker --version
+          docker info
+
+      # 5. Build Docker Image
       - name: Build Docker Image
         run: |
-          docker build -t website .
+          docker build -t website:latest .
 
+      # 6. List Docker Images
+      - name: List Docker Images
+        run: |
+          docker images
+
+      # 7. Scan Docker Image (Trivy)
+      - name: Scan Docker Image
+        run: |
+          trivy image --severity HIGH,CRITICAL website:latest
+
+      # 8. Stop Existing Container
       - name: Stop Existing Container
         run: |
           docker stop website || true
+
+      # 9. Remove Existing Container
+      - name: Remove Existing Container
+        run: |
           docker rm website || true
 
+      # 10. Remove Old Docker Image
+      - name: Remove Old Docker Image
+        run: |
+          docker image prune -f
+
+      # 11. Run New Container
       - name: Run Docker Container
         run: |
           docker run -d \
             --name website \
             -p 80:80 \
-            website
+            --restart unless-stopped \
+            website:latest
 
-      - name: Verify
-        run: docker ps
+      # 12. Wait for Container Startup
+      - name: Wait for Startup
+        run: |
+          sleep 10
+
+      # 13. Verify Running Containers
+      - name: Verify Container
+        run: |
+          docker ps
+
+      # 14. Health Check
+      - name: Health Check
+        run: |
+          curl -I http://localhost
+
+      # 15. Display Container Logs
+      - name: Display Logs
+        run: |
+          docker logs website
+
+      # 16. Cleanup Unused Images
+      - name: Cleanup Docker
+        run: |
+          docker system prune -f
+
+      # 17. Deployment Successful
+      - name: Deployment Successful
+        run: |
+          echo "======================================"
+          echo "Deployment Completed Successfully"
+          echo "Application URL:"
+          hostname -I
+          echo "http://<EC2-PUBLIC-IP>"
+          echo "======================================"

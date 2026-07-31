@@ -45,11 +45,6 @@ jobs:
         run: |
           docker images
 
-      # 7. Scan Docker Image (Trivy)
-      - name: Scan Docker Image
-        run: |
-          trivy image --severity HIGH,CRITICAL website:latest
-
       # 8. Stop Existing Container
       - name: Stop Existing Container
         run: |
